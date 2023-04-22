@@ -1,0 +1,99 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
+
+```{r}
+library(nycflights13)
+library(tidyverse)
+library(dplyr)
+
+view(flights)
+
+
+#Inner Join
+
+flights%>%
+  inner_join(planes, by=c("tailnum"="tailnum"))
+flights%>%
+inner_join(airlines, by=c("carrier"="carrier"))
+flights%>%
+  inner_join(airports, by=c("origin"="faa"))
+flights%>%
+  inner_join(airports, by=c ("dest"="faa"))
+flights%>%
+  inner_join(weather, by= c("year","month", "day", "hour","origin"))
+
+
+```
+
+
+```{r}
+#2.1.
+flights%>%
+  count(year, month, day)%>%
+  filter(n>1000)%>%
+  arrange(n)
+```
+
+
+```{r}
+#2.2.
+fligth_selected <- flights %>%
+select("year":"day", "hour", "origin", "dest", "tailnum", "carrier", "arr_delay", "dep_delay")
+```
+
+
+```{r}
+#2.3 
+airlines%>%
+left_join(fligth_selected, by =c("carrier"))%>%
+  select(-"origin",-"dest")%>%
+  mutate(tot_delay=arr_delay+ dep_delay) 
+
+```
+```{r}
+#2.4
+precip_delay<- flights%>%
+  inner_join(weather, by= c("year","month", "day", "hour","origin"))%>%
+  group_by(precip)%>%
+  summarise(delay=mean(dep_delay, na.rm = TRUE))
+
+  replace_na(precip_delay, list(delay=0))
+
+```
+```{r}
+#2.5
+
+ggplot(precip_delay, aes(x=precip, y=delay))+ geom_point()
+```
+```{r}
+flight_airport<- flights%>%
+  filter(year==2013, month==5, day==10)%>%
+  group_by(dest)%>%
+  summarise(delay=mean(arr_delay, na.rm = TRUE))%>%
+  inner_join(airports, by= c("dest"="faa"))
+
+```
+```{r}
+
+ggplot(flight_airport, aes(x=lon, y=lat, color=delay, size=delay)) + geom_point()
+
+```
+```{r}
+planes
+
+flight%>%
+  inner_join(planes, by=c("tailnum"="tailnum"), suffix=c("_planes","_flight"))%>%
+  transmute(tailnum, manufacturer_planes, pi=(dep_delay + arr_delay) / air_time)
+```
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
